@@ -276,3 +276,176 @@ async def get_geographic_metrics(
         "total_regions": len(regions),
         "timestamp": datetime.utcnow().isoformat(),
     }
+
+
+@router.get("/sla")
+async def get_sla_metrics(
+    hours: int = Query(24, ge=1, le=168, description="Time window in hours"),
+    threshold_minutes: int = Query(15, ge=1, le=60, description="SLA threshold in minutes"),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Get SLA (Service Level Agreement) metrics.
+    
+    Returns metrics about alert response times and SLA compliance.
+    """
+    cutoff_time = datetime.utcnow() - timedelta(hours=hours)
+    
+    alerts = await session.execute(
+        select(Alert).where(Alert.event_time >= cutoff_time)
+    )
+    all_alerts = alerts.scalars().all()
+    
+    total_alerts = 0
+    acknowledged_alerts = 0
+    within_sla = 0
+    response_times = []
+    
+    for alert in all_alerts:
+        total_alerts += 1
+        
+        if alert.acknowledged and alert.acknowledged_at:
+            acknowledged_alerts += 1
+            
+            if alert.event_time and alert.acknowledged_at:
+                response_time = (alert.acknowledged_at - alert.event_time).total_seconds() / 60
+                response_times.append(response_time)
+                
+                if response_time <= threshold_minutes:
+                    within_sla += 1
+    
+    avg_response_time = sum(response_times) / len(response_times) if response_times else 0
+    sla_compliance = (within_sla / acknowledged_alerts * 100) if acknowledged_alerts > 0 else 0
+    
+    return {
+        "time_window_hours": hours,
+        "threshold_minutes": threshold_minutes,
+        "total_alerts": total_alerts,
+        "acknowledged_alerts": acknowledged_alerts,
+        "within_sla": within_sla,
+        "sla_compliance_percent": round(sla_compliance, 2),
+        "avg_response_time_minutes": round(avg_response_time, 2),
+        "min_response_time_minutes": round(min(response_times), 2) if response_times else 0,
+        "max_response_time_minutes": round(max(response_times), 2) if response_times else 0,
+        "timestamp": datetime.utcnow().isoformat(),
+    }
+
+
+@router.get("/reports/daily")
+async def get_daily_report(
+    date: str = Query(None, description="Date in YYYY-MM-DD format (defaults to yesterday)"),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Get daily report of alerts.
+    """
+    if date:
+        report_date = datetime.strptime(date, "%Y-%m-%d")
+    else:
+        report_date = datetime.utcnow() - timedelta(days=1)
+    
+    start_of_day = report_date.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_of_day = start_of_day + timedelta(days=1)
+    
+    alerts = await session.execute(
+        select(Alert).where(
+            and_(
+                Alert.event_time >= start_of_day,
+                Alert.event_time < end_of_day,
+            )
+        )
+    )
+    all_alerts = alerts.scalars().all()
+    
+    severity_counts = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0}
+    type_counts = {}
+    total_acknowledged = 0
+    
+    for alert in all_alerts:
+        if alert.severity in severity_counts:
+            severity_counts[alert.severity] += 1
+        
+        type_counts[alert.alert_type] = type_counts.get(alert.alert_type, 0) + 1
+        
+        if alert.acknowledged:
+            total_acknowledged += 1
+    
+    return {
+        "report_type": "daily",
+        "date": start_of_day.strftime("%Y-%m-%d"),
+        "total_alerts": len(all_alerts),
+        "alerts_by_severity": severity_counts,
+        "alerts_by_type": type_counts,
+        "acknowledged_count": total_acknowledged,
+        "acknowledgment_rate": round(total_acknowledged / len(all_alerts) * 100, 2) if all_alerts else 0,
+        "timestamp": datetime.utcnow().isoformat(),
+    }
+
+
+@router.get("/reports/weekly")
+async def get_weekly_report(
+    weeks_ago: int = Query(0, ge=0, le=4, description="Weeks ago (0 = current week)"),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Get weekly report of alerts.
+    """
+    end_date = datetime.utcnow() - timedelta(weeks=weeks_ago)
+    start_date = end_date - timedelta(days=7)
+    
+    alerts = await session.execute(
+        select(Alert).where(
+            and_(
+                Alert.event_time >= start_date,
+                Alert.event_time < end_date,
+            )
+        )
+    )
+    all_alerts = alerts.scalars().all()
+    
+    severity_counts = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0}
+    type_counts = {}
+    total_acknowledged = 0
+    anomaly_count = 0
+    
+    for alert in all_alerts:
+        if alert.severity in severity_counts:
+            severity_counts[alert.severity] += 1
+        
+        type_counts[alert.alert_type] = type_counts.get(alert.alert_type, 0) + 1
+        
+        if alert.acknowledged:
+            total_acknowledged += 1
+        
+        if alert.is_anomaly:
+            anomaly_count += 1
+    
+    return {
+        "report_type": "weekly",
+        "start_date": start_date.strftime("%Y-%m-%d"),
+        "end_date": end_date.strftime("%Y-%m-%d"),
+        "total_alerts": len(all_alerts),
+        "alerts_by_severity": severity_counts,
+        "alerts_by_type": type_counts,
+        "acknowledged_count": total_acknowledged,
+        "acknowledgment_rate": round(total_acknowledged / len(all_alerts) * 100, 2) if all_alerts else 0,
+        "anomalies_detected": anomaly_count,
+        "timestamp": datetime.utcnow().isoformat(),
+    }
+
+
+@router.get("/system")
+async def get_system_metrics():
+    """
+    Get system performance metrics.
+    """
+    import psutil
+    
+    return {
+        "cpu_percent": psutil.cpu_percent(interval=0.1),
+        "memory_percent": psutil.virtual_memory().percent,
+        "memory_used_mb": round(psutil.virtual_memory().used / (1024 * 1024), 2),
+        "memory_available_mb": round(psutil.virtual_memory().available / (1024 * 1024), 2),
+        "disk_percent": psutil.disk_usage('/').percent,
+        "timestamp": datetime.utcnow().isoformat(),
+    }

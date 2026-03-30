@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Alert } from '../types';
 import AlertCard from './AlertCard';
 
@@ -29,6 +29,28 @@ const AlertList: React.FC<AlertListProps> = ({
   const sortedAlerts = [...filteredAlerts].sort(
     (a, b) => new Date(b.event_time).getTime() - new Date(a.event_time).getTime()
   );
+
+  const alertsByDate = useMemo(() => {
+    const groups: { date: string; alerts: Alert[] }[] = [];
+    
+    sortedAlerts.forEach((alert) => {
+      const alertDate = new Date(alert.event_time).toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+      
+      const existingGroup = groups.find((g) => g.date === alertDate);
+      if (existingGroup) {
+        existingGroup.alerts.push(alert);
+      } else {
+        groups.push({ date: alertDate, alerts: [alert] });
+      }
+    });
+    
+    return groups;
+  }, [sortedAlerts]);
 
   if (isLoading) {
     return (
@@ -124,17 +146,28 @@ const AlertList: React.FC<AlertListProps> = ({
           <p className="text-sm text-slate-500 mt-1">Try adjusting your filter criteria</p>
         </div>
       ) : (
-        <div className="grid gap-4">
-          {sortedAlerts.map((alert, index) => (
-            <div
-              key={alert.id}
-              className="animate-slide-up"
-              style={{ animationDelay: `${index * 0.05}s` }}
-            >
-              <AlertCard
-                alert={alert}
-                onClick={() => onAlertClick?.(alert)}
-              />
+        <div className="space-y-6">
+          {alertsByDate.map((group) => (
+            <div key={group.date}>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="h-px flex-1 bg-slate-800/50" />
+                <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">{group.date}</span>
+                <div className="h-px flex-1 bg-slate-800/50" />
+              </div>
+              <div className="grid gap-4">
+                {group.alerts.map((alert, index) => (
+                  <div
+                    key={alert.id}
+                    className="animate-slide-up"
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
+                    <AlertCard
+                      alert={alert}
+                      onClick={() => onAlertClick?.(alert)}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>

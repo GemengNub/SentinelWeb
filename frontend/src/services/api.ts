@@ -2,29 +2,11 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { Alert, AlertListResponse, AlertStats, MetricsData } from '../types';
 import config from '../config';
-import { mockAlerts, mockAlertStats, mockMetrics } from './mockData';
 
 const api = axios.create({
   baseURL: config.apiBaseUrl,
   timeout: 10000,
 });
-
-// Check if backend is available
-let backendAvailable = true;
-let backendChecked = false;
-
-const checkBackend = async (): Promise<boolean> => {
-  if (backendChecked) return backendAvailable;
-  try {
-    await api.get('/health', { timeout: 3000 });
-    backendAvailable = true;
-  } catch {
-    console.warn('Backend not available, using demo data');
-    backendAvailable = false;
-  }
-  backendChecked = true;
-  return backendAvailable;
-};
 
 // Alerts API
 export function useAlerts(params?: {
@@ -38,41 +20,13 @@ export function useAlerts(params?: {
   return useQuery<AlertListResponse>({
     queryKey: ['alerts', params],
     queryFn: async () => {
-      const isAvailable = await checkBackend();
-      if (!isAvailable) {
-        // Return mock data with pagination
-        let filteredAlerts = [...mockAlerts];
-        
-        if (params?.severity) {
-          filteredAlerts = filteredAlerts.filter(a => a.severity === params.severity);
-        }
-        if (params?.alertType) {
-          filteredAlerts = filteredAlerts.filter(a => a.alert_type === params.alertType);
-        }
-        if (params?.isAnomaly) {
-          filteredAlerts = filteredAlerts.filter(a => a.is_anomaly);
-        }
-        if (params?.isActive !== undefined) {
-          filteredAlerts = filteredAlerts.filter(a => a.is_active === params.isActive);
-        }
-        
-        const page = params?.page || 1;
-        const pageSize = params?.pageSize || 5;
-        const start = (page - 1) * pageSize;
-        const end = start + pageSize;
-        
-        return {
-          alerts: filteredAlerts.slice(start, end),
-          total: filteredAlerts.length,
-          page,
-          page_size: pageSize,
-        };
-      }
+      const pageSize = Math.min(params?.pageSize || 50, 100);
       const { data } = await api.get('/alerts', {
         params: {
-          ...params,
-          page_size: params?.pageSize,
+          page: params?.page || 1,
+          page_size: pageSize,
           alert_type: params?.alertType,
+          severity: params?.severity,
           is_anomaly: params?.isAnomaly,
           is_active: params?.isActive,
         },
@@ -80,6 +34,7 @@ export function useAlerts(params?: {
       return data;
     },
     refetchInterval: 30000,
+    retry: 1,
   });
 }
 
@@ -98,10 +53,6 @@ export function useActiveAlerts() {
   return useQuery<Alert[]>({
     queryKey: ['alerts', 'active'],
     queryFn: async () => {
-      const isAvailable = await checkBackend();
-      if (!isAvailable) {
-        return mockAlerts.filter(a => a.is_active);
-      }
       const { data } = await api.get('/alerts/active');
       return data;
     },
@@ -126,10 +77,6 @@ export function useAlertStats() {
   return useQuery<AlertStats>({
     queryKey: ['alerts', 'stats'],
     queryFn: async () => {
-      const isAvailable = await checkBackend();
-      if (!isAvailable) {
-        return mockAlertStats;
-      }
       const { data } = await api.get('/alerts/stats');
       return data;
     },
@@ -142,10 +89,6 @@ export function useMetrics(hours: number = 24) {
   return useQuery<MetricsData>({
     queryKey: ['metrics', hours],
     queryFn: async () => {
-      const isAvailable = await checkBackend();
-      if (!isAvailable) {
-        return mockMetrics;
-      }
       const { data } = await api.get('/metrics', {
         params: { hours },
       });

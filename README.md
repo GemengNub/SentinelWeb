@@ -1,6 +1,27 @@
 # Sentinel
 
-A real-time crisis intelligence platform that aggregates disaster data from external APIs, processes and evaluates risk using a Python backend, performs anomaly detection and prediction, streams alerts in real-time, and displays everything in a modern React TypeScript dashboard.
+A real-time crisis intelligence platform that ingests, scores, and monitors disaster data from multiple sources with live alerting and visualization.
+
+## Introduction
+
+Sentinel is designed to help operations teams and emergency responders understand emerging natural risks (earthquakes, storms, floods) by combining:
+
+- automatic data collection (USGS + OpenWeather)
+- rule-based risk scoring and anomaly detection
+- time-series prediction and statistical trend analysis
+- real-time user interfaces via WebSocket and a modern dashboard
+- production-ready infrastructure (Docker, Postgres, Redis, Celery, Nginx)
+
+The system architecture is layered for maintainability: API, services, workers, and data store.
+
+## Demo Video
+
+Below is the project demo video from the repository `assets` folder:
+
+<video controls width="820" height="460">
+  <source src="assets/video.mp4" type="video/mp4">
+  Your browser does not support the video tag. You can also view it directly at [assets/video.mp4](assets/video.mp4).
+</video>
 
 ## Features
 

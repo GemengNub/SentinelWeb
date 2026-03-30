@@ -5,6 +5,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { SettingsProvider } from './context/SettingsContext';
 import App from './App';
+import './i18n';
 import './styles/index.css';
 
 const queryClient = new QueryClient({

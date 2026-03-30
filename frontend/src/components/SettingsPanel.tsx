@@ -1,6 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { useSettings, MapStyle } from '../context/SettingsContext';
+import { useAppStore } from '../store';
+import { changeLanguage, languages } from '../i18n';
 
 interface SettingsPanelProps {
   isOpen: boolean;
@@ -10,6 +13,9 @@ interface SettingsPanelProps {
 
 const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose, anchorRef }) => {
   const { settings, updateSettings, playAlertSound } = useSettings();
+  const { t, i18n } = useTranslation();
+  const [viewName, setViewName] = useState('');
+  const { filters, savedViews, addSavedView, removeSavedView, applySavedView } = useAppStore();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -133,6 +139,75 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose, anchorRe
                   <option value="terrain">Terrain</option>
                 </select>
               </div>
+
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                  </svg>
+                  <span className="text-sm text-slate-300">Language</span>
+                </div>
+                <select
+                  value={i18n.language}
+                  onChange={(e) => changeLanguage(e.target.value)}
+                  className="w-full bg-slate-800/50 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                >
+                  {languages.map((lang) => (
+                    <option key={lang.code} value={lang.code}>
+                      {lang.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Saved Views Section */}
+          <div>
+            <p className="text-xs text-slate-500 uppercase tracking-wider mb-3">Saved Views</p>
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={viewName}
+                  onChange={(e) => setViewName(e.target.value)}
+                  placeholder="View name..."
+                  className="flex-1 bg-slate-800/50 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                />
+                <button
+                  onClick={() => {
+                    if (viewName.trim()) {
+                      addSavedView(viewName.trim(), filters);
+                      setViewName('');
+                    }
+                  }}
+                  className="px-3 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  Save
+                </button>
+              </div>
+              {savedViews.length > 0 && (
+                <div className="space-y-2 max-h-32 overflow-y-auto">
+                  {savedViews.map((view) => (
+                    <div key={view.id} className="flex items-center justify-between bg-slate-800/30 rounded-lg px-3 py-2">
+                      <button
+                        onClick={() => applySavedView(view.id)}
+                        className="text-sm text-slate-300 hover:text-white transition-colors"
+                      >
+                        {view.name}
+                      </button>
+                      <button
+                        onClick={() => removeSavedView(view.id)}
+                        className="text-slate-500 hover:text-red-400 transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
