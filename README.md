@@ -16,7 +16,7 @@ The system architecture is layered for maintainability: API, services, workers, 
 
 ## Demo
 
-![Sentinel Demo](assets/Recording%202026-03-30%20221818.gif)
+![Sentinel Demo](assets/demo.gif)
 
 ## Features
 
