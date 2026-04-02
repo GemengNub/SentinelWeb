@@ -14,19 +14,9 @@ Sentinel is designed to help operations teams and emergency responders understan
 
 The system architecture is layered for maintainability: API, services, workers, and data store.
 
-## Demo Video
+## Demo
 
-Below is the project demo video from the repository `assets` folder.
-
-> Note: GitHub markdown does not always allow inline playback of local video files (it may sanitize or drop the `<video>` tag in the rendered view). If playback is not available in the UI, use the direct link or download the file.
-
-<video controls width="820" height="460">
-  <source src="assets/video.mp4" type="video/mp4">
-  Your browser does not support the video tag. You can also view it directly at [assets/video.mp4](assets/video.mp4).
-</video>
-
-- Direct download/view link: [assets/video.mp4](assets/video.mp4)
-- Alternative (GitHub-friendly): convert to GIF or upload to YouTube/Vimeo and link/embed a thumbnail.
+![Sentinel Demo](assets/Recording%202026-03-30%20221818.gif)
 
 ## Features
 
