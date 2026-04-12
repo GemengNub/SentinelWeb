@@ -1,8 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { useSettings } from '../context/SettingsContext';
-import NotificationPanel from './NotificationPanel';
-import SettingsPanel from './SettingsPanel';
 
 interface HeaderProps {
   isConnected: boolean;
@@ -11,21 +9,9 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ isConnected, onMenuToggle, mobileMenuOpen }) => {
-  const [notificationOpen, setNotificationOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const notificationButtonRef = useRef<HTMLDivElement>(null);
-  const settingsButtonRef = useRef<HTMLDivElement>(null);
   const { settings } = useSettings();
 
-  const toggleNotifications = () => {
-    setNotificationOpen(!notificationOpen);
-    setSettingsOpen(false);
-  };
 
-  const toggleSettings = () => {
-    setSettingsOpen(!settingsOpen);
-    setNotificationOpen(false);
-  };
 
   const headerBg = settings.darkMode ? 'bg-slate-900/80 border-white/5' : 'bg-white/80 border-slate-200';
   const textPrimary = settings.darkMode ? 'text-white' : 'text-slate-900';
@@ -104,103 +90,23 @@ const Header: React.FC<HeaderProps> = ({ isConnected, onMenuToggle, mobileMenuOp
             </Link>
           </div>
 
-          {/* Right side - Status and actions */}
+          {/* Right side - Status */}
           <div className="flex items-center gap-4">
-            {/* Connection status */}
-            <div className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800/50 backdrop-blur-sm border border-white/5">
-              <div className="relative">
-                <span className={`w-2.5 h-2.5 rounded-full block ${
-                  isConnected ? 'bg-emerald-400' : 'bg-red-400'
-                }`} />
-                {isConnected && (
-                  <span className="absolute inset-0 w-2.5 h-2.5 bg-emerald-400 rounded-full animate-ping opacity-40" />
-                )}
-              </div>
-              <span className={`text-sm font-medium ${isConnected ? 'text-emerald-400' : 'text-red-400'}`}>
-                {isConnected ? 'Live' : 'Offline'}
-              </span>
-            </div>
-
             {/* Time display - hidden on mobile */}
             <div className="hidden md:block text-right">
               <p className="text-sm font-medium text-slate-300">
-                {new Date().toLocaleDateString('en-US', { 
-                  weekday: 'short', 
-                  month: 'short', 
-                  day: 'numeric' 
+                {new Date().toLocaleDateString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric'
                 })}
               </p>
               <p className="text-xs text-cyan-400/70">
-                {new Date().toLocaleTimeString('en-US', { 
-                  hour: '2-digit', 
-                  minute: '2-digit' 
+                {new Date().toLocaleTimeString('en-US', {
+                  hour: '2-digit',
+                  minute: '2-digit'
                 })}
               </p>
-            </div>
-
-            {/* Notification button with dropdown */}
-            <div ref={notificationButtonRef} className="relative">
-              <button 
-                onClick={toggleNotifications}
-                className={`relative p-2.5 rounded-xl transition-all duration-300 group ${
-                  notificationOpen ? 'bg-cyan-500/20 text-cyan-400' : 'hover:bg-white/10'
-                }`}
-              >
-                <svg
-                  className={`w-6 h-6 transition-colors ${notificationOpen ? 'text-cyan-400' : 'text-slate-400 group-hover:text-cyan-400'}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                  />
-                </svg>
-                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-slate-900 animate-pulse" />
-              </button>
-              <NotificationPanel 
-                isOpen={notificationOpen} 
-                onClose={() => setNotificationOpen(false)} 
-                anchorRef={notificationButtonRef}
-              />
-            </div>
-
-            {/* Settings button with dropdown */}
-            <div ref={settingsButtonRef} className="relative">
-              <button 
-                onClick={toggleSettings}
-                className={`p-2.5 rounded-xl transition-all duration-300 hidden sm:block group ${
-                  settingsOpen ? 'bg-cyan-500/20 text-cyan-400' : 'hover:bg-white/10'
-                }`}
-              >
-                <svg
-                  className={`w-6 h-6 transition-colors ${settingsOpen ? 'text-cyan-400' : 'text-slate-400 group-hover:text-cyan-400'}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                </svg>
-              </button>
-              <SettingsPanel 
-                isOpen={settingsOpen} 
-                onClose={() => setSettingsOpen(false)} 
-                anchorRef={settingsButtonRef}
-              />
             </div>
           </div>
         </div>

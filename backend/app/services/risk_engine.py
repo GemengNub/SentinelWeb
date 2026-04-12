@@ -136,15 +136,29 @@ class StormRiskStrategy(RiskStrategy):
     """Risk assessment strategy for storms and weather events."""
     
     def can_handle(self, event_type: str) -> bool:
-        return event_type.upper() in ["STORM", "WEATHER", "HURRICANE", "TYPHOON"]
+        return event_type.upper() in ["STORM", "WEATHER", "HURRICANE", "TYPHOON", "WINTER_STORM", "WILDFIRE"]
     
     def assess(self, event_data: Dict[str, Any]) -> RiskScore:
         """Assess storm risk based on wind speed and rainfall."""
         wind_speed = event_data.get("wind_speed", 0) or 0
         rainfall = event_data.get("rainfall", 0) or 0
+        event_type = event_data.get("event_type", "").upper()
         
         factors = {}
         score = 0.0
+        
+        # Base score for alert types that always have some risk
+        base_scores = {
+            "HURRICANE": 50.0,
+            "TYPHOON": 50.0,
+            "WINTER_STORM": 35.0,
+            "WILDFIRE": 40.0,
+            "STORM": 25.0,
+        }
+        
+        if event_type in base_scores:
+            score = base_scores[event_type]
+            factors["base_score"] = base_scores[event_type]
         
         # Wind speed scoring (0-50 points, mph)
         # Convert m/s to mph if needed
@@ -162,7 +176,7 @@ class StormRiskStrategy(RiskStrategy):
             wind_score = wind_mph * 0.2
         
         factors["wind_score"] = wind_score
-        score += wind_score
+        score = max(score, wind_score)
         
         # Rainfall scoring (0-30 points, mm/hour)
         if rainfall >= settings.RAINFALL_CRITICAL_THRESHOLD:

@@ -44,6 +44,8 @@ services:
     restart: unless-stopped
     ports:
       - "8000:8000"
+    env_file:
+      - ../backend/.env
     environment:
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/disaster_detector
       - REDIS_URL=redis://redis:6379/0
@@ -70,6 +72,8 @@ services:
       dockerfile: Dockerfile.worker
     container_name: disaster-detector-worker
     restart: unless-stopped
+    env_file:
+      - ../backend/.env
     environment:
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/disaster_detector
       - REDIS_URL=redis://redis:6379/0
@@ -89,6 +93,8 @@ services:
     container_name: disaster-detector-beat
     restart: unless-stopped
     command: celery -A app.workers.celery_app beat --loglevel=info
+    env_file:
+      - ../backend/.env
     environment:
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/disaster_detector
       - REDIS_URL=redis://redis:6379/0

@@ -41,6 +41,22 @@ celery_app.conf.update(
             "task": "app.workers.tasks.poll_weather",
             "schedule": settings.WEATHER_POLL_INTERVAL,
         },
+        "poll-noaa": {
+            "task": "app.workers.tasks.poll_noaa",
+            "schedule": settings.WEATHER_POLL_INTERVAL,
+        },
+        "poll-pagasa": {
+            "task": "app.workers.tasks.poll_pagasa",
+            "schedule": settings.EARTHQUAKE_POLL_INTERVAL,
+        },
+        "poll-jma": {
+            "task": "app.workers.tasks.poll_jma",
+            "schedule": settings.EARTHQUAKE_POLL_INTERVAL,
+        },
+        # "poll-firms": {
+        #     "task": "app.workers.tasks.poll_firms",
+        #     "schedule": 300.0,
+        # },  # FIRMS API requires different authentication - disabled for now
         "process-pending-events": {
             "task": "app.workers.tasks.process_pending_events",
             "schedule": 30.0,  # Every 30 seconds

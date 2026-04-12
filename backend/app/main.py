@@ -21,12 +21,12 @@ async def lifespan(app: FastAPI):
     setup_logging()
     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
     logger.info(f"Environment: {settings.ENVIRONMENT}")
-    
+
     await init_db()
     logger.info("Database initialized")
-    
+
     yield
-    
+
     # Shutdown
     logger.info("Shutting down...")
     await close_db()

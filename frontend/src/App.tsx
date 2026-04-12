@@ -15,6 +15,7 @@ import StatsPage from './pages/StatsPage';
 function App() {
   const { isConnected, lastAlert } = useWebSocket();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { settings } = useSettings();
   const { selectedAlert, setSelectedAlert } = useAppStore();
 
@@ -54,12 +55,17 @@ function App() {
         
         {/* Sidebar - Fixed on mobile, Sticky on desktop */}
         <div className={`
-          fixed lg:sticky top-0 lg:top-[73px] inset-y-0 left-0 z-30 w-72 
-          transform transition-transform duration-300 ease-in-out 
+          fixed lg:sticky top-0 lg:top-[73px] inset-y-0 left-0 z-30 
+          transform transition-all duration-300 ease-in-out 
           lg:translate-x-0 lg:shrink-0 lg:h-[calc(100vh-73px)]
           ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+          ${sidebarCollapsed ? 'w-20' : 'w-72'}
         `}>
-          <Sidebar onClose={() => setMobileMenuOpen(false)} />
+          <Sidebar 
+            onClose={() => setMobileMenuOpen(false)} 
+            collapsed={sidebarCollapsed}
+            onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+          />
         </div>
         
         {/* Main Content */}

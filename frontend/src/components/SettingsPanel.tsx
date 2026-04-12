@@ -8,10 +8,9 @@ import { changeLanguage, languages } from '../i18n';
 interface SettingsPanelProps {
   isOpen: boolean;
   onClose: () => void;
-  anchorRef: React.RefObject<HTMLDivElement>;
 }
 
-const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose, anchorRef }) => {
+const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
   const { settings, updateSettings, playAlertSound } = useSettings();
   const { t, i18n } = useTranslation();
   const [viewName, setViewName] = useState('');
@@ -21,9 +20,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose, anchorRe
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
       if (
-        anchorRef.current && 
-        !anchorRef.current.contains(target) &&
-        !(document.getElementById('settings-panel')?.contains(target))
+        !document.getElementById('settings-panel')?.contains(target)
       ) {
         onClose();
       }
@@ -44,7 +41,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose, anchorRe
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [isOpen, onClose, anchorRef]);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -70,16 +67,12 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose, anchorRe
   const panelContent = (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 z-[99]" onClick={onClose} />
+      <div className="fixed inset-0 z-[99] bg-black/50 backdrop-blur-sm" onClick={onClose} />
       
       {/* Panel */}
       <div
         id="settings-panel"
-        className="fixed z-[100] w-80 rounded-2xl bg-slate-900/98 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/50 animate-slide-down overflow-hidden"
-        style={{
-          top: anchorRef.current ? anchorRef.current.getBoundingClientRect().bottom + 8 : 80,
-          right: anchorRef.current ? window.innerWidth - anchorRef.current.getBoundingClientRect().right : 20,
-        }}
+        className="fixed z-[100] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md rounded-2xl bg-slate-900/98 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/50 overflow-hidden"
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/10">

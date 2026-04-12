@@ -45,6 +45,12 @@ class Settings(BaseSettings):
     USGS_API_BASE_URL: str = "https://earthquake.usgs.gov/fdsnws/event/1/query"
     OPENWEATHER_API_KEY: Optional[str] = None
     OPENWEATHER_API_BASE_URL: str = "https://api.openweathermap.org/data/2.5"
+    NOAA_API_BASE_URL: str = "https://api.weather.gov"
+    PAGASA_API_BASE_URL: str = "https://api.pagasa.dost.gov.ph"
+    PAGASA_API_KEY: Optional[str] = None
+    JMA_API_BASE_URL: str = "https://www.jma.go.jp/bosai/quake"
+    FIRMS_API_BASE_URL: str = "https://firms2.modaps.eosdis.nasa.gov"
+    FIRMS_API_KEY: Optional[str] = None
     
     # Celery
     CELERY_BROKER_URL: str = "redis://localhost:6379/1"

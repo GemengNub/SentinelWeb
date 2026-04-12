@@ -97,6 +97,245 @@ def poll_earthquakes(self):
 
 
 @celery_app.task(bind=True, max_retries=3, default_retry_delay=60)
+def poll_noaa(self):
+    """Poll NOAA for weather alerts data."""
+    logger.info("Polling NOAA for weather alerts...")
+    
+    async def _poll():
+        from app.services.api_clients import APIClientFactory
+        from app.models.event import Event
+        from app.db.session import async_session_factory
+        
+        client = APIClientFactory.get_noaa_client()
+        
+        try:
+            events = await client.get_alerts()
+            
+            async with async_session_factory() as session:
+                new_events = []
+                
+                for event_data in events:
+                    existing = await session.execute(
+                        select(Event).where(Event.external_id == event_data.get("external_id"))
+                    )
+                    
+                    if existing.scalar_one_or_none():
+                        continue
+                    
+                    location_name = event_data.get("location_name") or "Unknown"
+                    if location_name and len(location_name) > 255:
+                        location_name = location_name[:255]
+                    
+                    event = Event(
+                        event_type=event_data["event_type"],
+                        external_id=event_data.get("external_id"),
+                        source=event_data["source"],
+                        latitude=event_data["latitude"],
+                        longitude=event_data["longitude"],
+                        location_name=location_name,
+                        place=location_name,
+                        magnitude=event_data.get("magnitude"),
+                        event_time=event_data.get("event_time", datetime.utcnow()),
+                        raw_data=event_data.get("raw_data"),
+                    )
+                    session.add(event)
+                    new_events.append(event)
+                
+                await session.commit()
+                
+                if new_events:
+                    logger.info(f"Stored {len(new_events)} new NOAA alerts")
+                
+                return len(new_events)
+        
+        finally:
+            await client.close()
+    
+    try:
+        return run_async(_poll())
+    except Exception as e:
+        logger.error(f"Error polling NOAA: {str(e)}")
+        self.retry(exc=e)
+
+
+@celery_app.task(bind=True, max_retries=3, default_retry_delay=60)
+def poll_pagasa(self):
+    """Poll PAGASA for earthquake and weather data."""
+    logger.info("Polling PAGASA for disaster data...")
+    
+    async def _poll():
+        from app.services.api_clients import APIClientFactory
+        from app.models.event import Event
+        from app.db.session import async_session_factory
+        
+        client = APIClientFactory.get_pagasa_client()
+        
+        new_events = []
+        
+        async with async_session_factory() as session:
+            try:
+                earthquakes = await client.get_earthquakes(limit=50)
+                
+                for event_data in earthquakes:
+                    existing = await session.execute(
+                        select(Event).where(Event.external_id == event_data.get("external_id"))
+                    )
+                    
+                    if existing.scalar_one_or_none():
+                        continue
+                    
+                    event = Event(
+                        event_type=event_data["event_type"],
+                        external_id=event_data.get("external_id"),
+                        source=event_data["source"],
+                        latitude=event_data["latitude"],
+                        longitude=event_data["longitude"],
+                        depth=event_data.get("depth"),
+                        location_name=event_data.get("location_name"),
+                        place=event_data.get("place"),
+                        magnitude=event_data.get("magnitude"),
+                        event_time=event_data.get("event_time", datetime.utcnow()),
+                        raw_data=event_data.get("raw_data"),
+                    )
+                    session.add(event)
+                    new_events.append(event)
+                
+            except Exception as e:
+                logger.warning(f"Failed to get PAGASA earthquakes: {str(e)}")
+            
+            await session.commit()
+            
+            if new_events:
+                logger.info(f"Stored {len(new_events)} new PAGASA events")
+            
+            return len(new_events)
+    
+    try:
+        return run_async(_poll())
+    except Exception as e:
+        logger.error(f"Error polling PAGASA: {str(e)}")
+        self.retry(exc=e)
+
+
+@celery_app.task(bind=True, max_retries=3, default_retry_delay=60)
+def poll_jma(self):
+    """Poll JMA for earthquake and weather warnings."""
+    logger.info("Polling JMA for disaster data...")
+    
+    async def _poll():
+        from app.services.api_clients import APIClientFactory
+        from app.models.event import Event
+        from app.db.session import async_session_factory
+        
+        client = APIClientFactory.get_jma_client()
+        
+        new_events = []
+        
+        async with async_session_factory() as session:
+            try:
+                earthquakes = await client.get_earthquakes(limit=50)
+                
+                for event_data in earthquakes:
+                    existing = await session.execute(
+                        select(Event).where(Event.external_id == event_data.get("external_id"))
+                    )
+                    
+                    if existing.scalar_one_or_none():
+                        continue
+                    
+                    event = Event(
+                        event_type=event_data["event_type"],
+                        external_id=event_data.get("external_id"),
+                        source=event_data["source"],
+                        latitude=event_data["latitude"],
+                        longitude=event_data["longitude"],
+                        depth=event_data.get("depth"),
+                        location_name=event_data.get("location_name"),
+                        place=event_data.get("place"),
+                        magnitude=event_data.get("magnitude"),
+                        intensity=event_data.get("intensity"),
+                        event_time=event_data.get("event_time", datetime.utcnow()),
+                        raw_data=event_data.get("raw_data"),
+                    )
+                    session.add(event)
+                    new_events.append(event)
+                
+            except Exception as e:
+                logger.warning(f"Failed to get JMA earthquakes: {str(e)}")
+            
+            await session.commit()
+            
+            if new_events:
+                logger.info(f"Stored {len(new_events)} new JMA events")
+            
+            return len(new_events)
+    
+    try:
+        return run_async(_poll())
+    except Exception as e:
+        logger.error(f"Error polling JMA: {str(e)}")
+        self.retry(exc=e)
+
+
+@celery_app.task(bind=True, max_retries=3, default_retry_delay=60)
+def poll_firms(self):
+    """Poll NASA FIRMS for wildfire data."""
+    logger.info("Polling NASA FIRMS for fire data...")
+    
+    async def _poll():
+        from app.services.api_clients import APIClientFactory
+        from app.models.event import Event
+        from app.db.session import async_session_factory
+        
+        client = APIClientFactory.get_firms_client()
+        
+        new_events = []
+        
+        async with async_session_factory() as session:
+            try:
+                fires = await client.get_fire_data(days=1)
+                
+                for event_data in fires:
+                    existing = await session.execute(
+                        select(Event).where(Event.external_id == event_data.get("external_id"))
+                    )
+                    
+                    if existing.scalar_one_or_none():
+                        continue
+                    
+                    event = Event(
+                        event_type=event_data["event_type"],
+                        external_id=event_data.get("external_id"),
+                        source=event_data["source"],
+                        latitude=event_data["latitude"],
+                        longitude=event_data["longitude"],
+                        magnitude=event_data.get("magnitude"),
+                        location_name=event_data.get("location_name"),
+                        place=event_data.get("place"),
+                        event_time=event_data.get("event_time", datetime.utcnow()),
+                        raw_data=event_data.get("raw_data"),
+                    )
+                    session.add(event)
+                    new_events.append(event)
+                
+            except Exception as e:
+                logger.warning(f"Failed to get FIRMS fire data: {str(e)}")
+            
+            await session.commit()
+            
+            if new_events:
+                logger.info(f"Stored {len(new_events)} new FIRMS fire events")
+            
+            return len(new_events)
+    
+    try:
+        return run_async(_poll())
+    except Exception as e:
+        logger.error(f"Error polling FIRMS: {str(e)}")
+        self.retry(exc=e)
+
+
+@celery_app.task(bind=True, max_retries=3, default_retry_delay=60)
 def poll_weather(self):
     """Poll OpenWeather for weather data."""
     logger.info("Polling weather data...")
@@ -125,6 +364,13 @@ def poll_weather(self):
                     weather_data = await client.get_weather_data(loc["lat"], loc["lon"])
                     
                     if weather_data:
+                        existing = await session.execute(
+                            select(Event).where(Event.external_id == weather_data.get("external_id"))
+                        )
+                        
+                        if existing.scalar_one_or_none():
+                            continue
+                        
                         event = Event(
                             event_type=weather_data["event_type"],
                             external_id=weather_data.get("external_id"),
@@ -183,13 +429,23 @@ def process_pending_events(self):
             
             for event in events:
                 try:
+                    # Extract wind_speed and rainfall from raw_data for NOAA/weather events
+                    wind_speed = event.wind_speed
+                    rainfall = event.rainfall
+                    
+                    if not wind_speed and event.raw_data:
+                        props = event.raw_data.get("properties", {})
+                        if props:
+                            wind_speed = props.get("windSpeed") or props.get("wind_speed")
+                            rainfall = props.get("rainfall") or props.get("precipitation")
+                    
                     # Convert event to dict for processing
                     event_data = {
                         "event_type": event.event_type,
                         "magnitude": event.magnitude,
                         "depth": event.depth,
-                        "wind_speed": event.wind_speed,
-                        "rainfall": event.rainfall,
+                        "wind_speed": wind_speed,
+                        "rainfall": rainfall,
                         "latitude": event.latitude,
                         "longitude": event.longitude,
                         "location_name": event.location_name or event.place,
@@ -240,11 +496,11 @@ def process_pending_events(self):
                             alert_data = {
                                 "alert_type": risk_engine.get_alert_type(event_data),
                                 "severity": risk_score.severity.value,
-                                "title": f"{event.event_type} Alert - {event.location_name or 'Unknown Location'}",
-                                "description": risk_score.description,
+                                "title": f"{event.event_type} Alert - {(event.location_name or 'Unknown Location')[:100]}",
+                                "description": risk_score.description[:500] if risk_score.description else "",
                                 "latitude": event.latitude,
                                 "longitude": event.longitude,
-                                "location_name": event.location_name or event.place,
+                                "location_name": (event.location_name or event.place)[:255] if event.location_name or event.place else "Unknown",
                                 "magnitude": event.magnitude,
                                 "depth": event.depth,
                                 "wind_speed": event.wind_speed,

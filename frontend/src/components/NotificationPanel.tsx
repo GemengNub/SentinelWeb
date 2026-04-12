@@ -6,19 +6,16 @@ import { formatDistanceToNow } from 'date-fns';
 interface NotificationPanelProps {
   isOpen: boolean;
   onClose: () => void;
-  anchorRef: React.RefObject<HTMLDivElement>;
 }
 
-const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, onClose, anchorRef }) => {
+const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, onClose }) => {
   const { data } = useAlerts({ pageSize: 10 });
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
       if (
-        anchorRef.current && 
-        !anchorRef.current.contains(target) &&
-        !(document.getElementById('notification-panel')?.contains(target))
+        !document.getElementById('notification-panel')?.contains(target)
       ) {
         onClose();
       }
@@ -39,7 +36,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, onClose, 
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [isOpen, onClose, anchorRef]);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -66,16 +63,12 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, onClose, 
   const panelContent = (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 z-[99]" onClick={onClose} />
+      <div className="fixed inset-0 z-[99] bg-black/50 backdrop-blur-sm" onClick={onClose} />
       
       {/* Panel */}
       <div
         id="notification-panel"
-        className="fixed z-[100] w-96 max-h-[500px] overflow-hidden rounded-2xl bg-slate-900/98 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/50 animate-slide-down"
-        style={{
-          top: anchorRef.current ? anchorRef.current.getBoundingClientRect().bottom + 8 : 80,
-          right: anchorRef.current ? window.innerWidth - anchorRef.current.getBoundingClientRect().right : 20,
-        }}
+        className="fixed z-[100] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md rounded-2xl bg-slate-900/98 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/50 overflow-hidden"
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/10">

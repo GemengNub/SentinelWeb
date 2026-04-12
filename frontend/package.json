@@ -30,6 +30,9 @@
     "zustand": "^4.4.7"
   },
   "devDependencies": {
+    "@capacitor/android": "^5.7.8",
+    "@capacitor/cli": "^5.7.8",
+    "@capacitor/ios": "^5.7.8",
     "@types/react": "^18.2.48",
     "@types/react-dom": "^18.2.18",
     "@typescript-eslint/eslint-plugin": "^6.19.1",

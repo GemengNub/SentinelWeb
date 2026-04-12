@@ -72,9 +72,10 @@ class AlertService:
         query = select(Alert)
         count_query = select(func.count(Alert.id))
         
+        conditions = []
+        conditions.append(Alert.source.not_in(["MOCK", "TEST", "GLOBAL_TEST"]))
+        
         if filters:
-            conditions = []
-            
             if filters.alert_type:
                 conditions.append(Alert.alert_type == filters.alert_type.value)
             if filters.severity:
@@ -159,7 +160,12 @@ class AlertService:
         """Get all active alerts."""
         result = await self.session.execute(
             select(Alert)
-            .where(Alert.is_active == True)
+            .where(
+                and_(
+                    Alert.is_active == True,
+                    Alert.source.not_in(["MOCK", "TEST", "GLOBAL_TEST"])
+                )
+            )
             .order_by(desc(Alert.event_time))
         )
         return list(result.scalars().all())
@@ -169,28 +175,41 @@ class AlertService:
         cutoff = datetime.utcnow() - timedelta(hours=hours)
         result = await self.session.execute(
             select(Alert)
-            .where(Alert.event_time >= cutoff)
+            .where(
+                and_(
+                    Alert.event_time >= cutoff,
+                    Alert.source.not_in(["MOCK", "TEST", "GLOBAL_TEST"])
+                )
+            )
             .order_by(desc(Alert.event_time))
         )
         return list(result.scalars().all())
     
     async def get_alert_stats(self) -> Dict[str, Any]:
         """Get alert statistics."""
-        # Total alerts
+        # Total alerts (excluding mock/test data)
         total_result = await self.session.execute(
-            select(func.count(Alert.id))
+            select(func.count(Alert.id)).where(
+                Alert.source.not_in(["MOCK", "TEST", "GLOBAL_TEST"])
+            )
         )
         total = total_result.scalar() or 0
         
         # Active alerts
         active_result = await self.session.execute(
-            select(func.count(Alert.id)).where(Alert.is_active == True)
+            select(func.count(Alert.id)).where(
+                and_(
+                    Alert.is_active == True,
+                    Alert.source.not_in(["MOCK", "TEST", "GLOBAL_TEST"])
+                )
+            )
         )
         active = active_result.scalar() or 0
         
         # Alerts by severity
         severity_result = await self.session.execute(
             select(Alert.severity, func.count(Alert.id))
+            .where(Alert.source.not_in(["MOCK", "TEST", "GLOBAL_TEST"]))
             .group_by(Alert.severity)
         )
         by_severity = {row[0]: row[1] for row in severity_result.all()}
@@ -198,6 +217,7 @@ class AlertService:
         # Alerts by type
         type_result = await self.session.execute(
             select(Alert.alert_type, func.count(Alert.id))
+            .where(Alert.source.not_in(["MOCK", "TEST", "GLOBAL_TEST"]))
             .group_by(Alert.alert_type)
         )
         by_type = {row[0]: row[1] for row in type_result.all()}
@@ -205,13 +225,23 @@ class AlertService:
         # Recent alerts (last 24 hours)
         recent_cutoff = datetime.utcnow() - timedelta(hours=24)
         recent_result = await self.session.execute(
-            select(func.count(Alert.id)).where(Alert.event_time >= recent_cutoff)
+            select(func.count(Alert.id)).where(
+                and_(
+                    Alert.event_time >= recent_cutoff,
+                    Alert.source.not_in(["MOCK", "TEST", "GLOBAL_TEST"])
+                )
+            )
         )
         recent_24h = recent_result.scalar() or 0
         
         # Anomalies count
         anomaly_result = await self.session.execute(
-            select(func.count(Alert.id)).where(Alert.is_anomaly == True)
+            select(func.count(Alert.id)).where(
+                and_(
+                    Alert.is_anomaly == True,
+                    Alert.source.not_in(["MOCK", "TEST", "GLOBAL_TEST"])
+                )
+            )
         )
         anomalies = anomaly_result.scalar() or 0
         
