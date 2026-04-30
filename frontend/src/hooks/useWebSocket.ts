@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { WebSocketMessage, Alert } from '../types';
 import { useAppStore } from '../store';
 import toast from 'react-hot-toast';
+import config from '../config';
 
 interface UseWebSocketOptions {
   url?: string;
@@ -11,7 +12,7 @@ interface UseWebSocketOptions {
 
 export function useWebSocket(options: UseWebSocketOptions = {}) {
   const {
-    url = `ws://${window.location.host}/api/v1/ws`,
+    url = config.wsUrl,
     reconnectInterval = 3000,
     maxReconnectAttempts = 10,
   } = options;
