@@ -21,7 +21,7 @@ export function useAlerts(params?: {
     queryKey: ['alerts', params],
     queryFn: async () => {
       const pageSize = Math.min(params?.pageSize || 50, 100);
-      const { data } = await api.get('/alerts', {
+      const { data } = await api.get('/alerts/', {
         params: {
           page: params?.page || 1,
           page_size: pageSize,
@@ -89,7 +89,7 @@ export function useMetrics(hours: number = 24) {
   return useQuery<MetricsData>({
     queryKey: ['metrics', hours],
     queryFn: async () => {
-      const { data } = await api.get('/metrics', {
+      const { data } = await api.get('/metrics/', {
         params: { hours },
       });
       return data;
