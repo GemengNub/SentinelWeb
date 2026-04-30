@@ -6,8 +6,8 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: disaster_detector
+      POSTGRES_PASSWORD: Samiel22
+      POSTGRES_DB: sentinel
     ports:
       - "5432:5432"
     volumes:
@@ -45,7 +45,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/disaster_detector
+      - DATABASE_URL=postgresql+asyncpg://postgres:Samiel22@postgres:5432/sentinel
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/1
       - CELERY_RESULT_BACKEND=redis://redis:6379/2
@@ -71,7 +71,7 @@ services:
     container_name: disaster-detector-worker
     restart: unless-stopped
     environment:
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/disaster_detector
+      - DATABASE_URL=postgresql+asyncpg://postgres:Samiel22@postgres:5432/sentinel
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/1
       - CELERY_RESULT_BACKEND=redis://redis:6379/2
@@ -90,7 +90,7 @@ services:
     restart: unless-stopped
     command: celery -A app.workers.celery_app beat --loglevel=info
     environment:
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/disaster_detector
+      - DATABASE_URL=postgresql+asyncpg://postgres:Samiel22@postgres:5432/sentinel
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/1
       - CELERY_RESULT_BACKEND=redis://redis:6379/2

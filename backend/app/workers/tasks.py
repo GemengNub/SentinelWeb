@@ -3,12 +3,14 @@ Celery background tasks for disaster detection system.
 """
 import asyncio
 from datetime import datetime, timedelta
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from loguru import logger
 from sqlalchemy import select, delete
 
 from app.workers.celery_app import celery_app
 from app.core.config import settings
+
+_task_loop: Optional[asyncio.AbstractEventLoop] = None
 
 
 def get_async_session():
@@ -19,12 +21,11 @@ def get_async_session():
 
 def run_async(coro):
     """Run async function in Celery task."""
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        return loop.run_until_complete(coro)
-    finally:
-        loop.close()
+    global _task_loop
+    if _task_loop is None or _task_loop.is_closed():
+        _task_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(_task_loop)
+    return _task_loop.run_until_complete(coro)
 
 
 @celery_app.task(bind=True, max_retries=3, default_retry_delay=60)
@@ -33,11 +34,11 @@ def poll_earthquakes(self):
     logger.info("Polling USGS for earthquake data...")
     
     async def _poll():
-        from app.services.api_clients import APIClientFactory
+        from app.services.api_clients import USGSClient
         from app.models.event import Event
         from app.db.session import async_session_factory
         
-        client = APIClientFactory.get_usgs_client()
+        client = USGSClient()
         
         try:
             # Fetch recent earthquakes
@@ -102,11 +103,11 @@ def poll_weather(self):
     logger.info("Polling weather data...")
     
     async def _poll():
-        from app.services.api_clients import APIClientFactory
+        from app.services.api_clients import OpenWeatherClient
         from app.models.event import Event
         from app.db.session import async_session_factory
         
-        client = APIClientFactory.get_weather_client()
+        client = OpenWeatherClient()
         
         # Sample locations for weather monitoring
         locations = [
@@ -125,6 +126,14 @@ def poll_weather(self):
                     weather_data = await client.get_weather_data(loc["lat"], loc["lon"])
                     
                     if weather_data:
+                        existing = await session.execute(
+                            select(Event).where(
+                                Event.external_id == weather_data.get("external_id")
+                            )
+                        )
+                        if existing.scalar_one_or_none():
+                            continue
+
                         event = Event(
                             event_type=weather_data["event_type"],
                             external_id=weather_data.get("external_id"),

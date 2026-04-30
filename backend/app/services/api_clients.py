@@ -270,13 +270,33 @@ class OpenWeatherClient(BaseAPIClient):
         main = data.get("main", {})
         wind = data.get("wind", {})
         rain = data.get("rain", {})
+        coord = data.get("coord", {})
+        latitude = coord.get("lat", 0)
+        longitude = coord.get("lon", 0)
+        city_id = data.get("id")
+        observation_ts = data.get("dt")
+
+        if city_id and observation_ts:
+            external_id = f"ow-{city_id}-{observation_ts}"
+        elif city_id:
+            external_id = f"ow-{city_id}-{int(datetime.utcnow().timestamp())}"
+        else:
+            external_id = (
+                f"ow-{latitude:.4f}-{longitude:.4f}-{int(datetime.utcnow().timestamp())}"
+            )
+
+        event_time = (
+            datetime.fromtimestamp(observation_ts)
+            if observation_ts
+            else datetime.utcnow()
+        )
         
         return {
-            "external_id": str(data.get("id", "")),
+            "external_id": external_id,
             "event_type": "WEATHER",
             "source": "OpenWeather",
-            "latitude": data.get("coord", {}).get("lat", 0),
-            "longitude": data.get("coord", {}).get("lon", 0),
+            "latitude": latitude,
+            "longitude": longitude,
             "temperature": main.get("temp"),
             "humidity": main.get("humidity"),
             "pressure": main.get("pressure"),
@@ -284,15 +304,18 @@ class OpenWeatherClient(BaseAPIClient):
             "wind_direction": wind.get("deg"),
             "rainfall": rain.get("1h", 0.0),
             "location_name": data.get("name"),
-            "event_time": datetime.utcnow(),
+            "event_time": event_time,
             "raw_data": data,
         }
     
     def _get_mock_weather_data(self, latitude: float, longitude: float) -> Dict[str, Any]:
         """Return mock weather data when API fails."""
         logger.warning("Using mock weather data")
+        now = datetime.utcnow()
         return {
-            "external_id": "mock-weather-1",
+            "external_id": (
+                f"mock-weather-{latitude:.4f}-{longitude:.4f}-{int(now.timestamp())}"
+            ),
             "event_type": "WEATHER",
             "source": "MOCK",
             "latitude": latitude,
@@ -304,7 +327,7 @@ class OpenWeatherClient(BaseAPIClient):
             "wind_direction": 180.0,
             "rainfall": 0.0,
             "location_name": "Mock Location",
-            "event_time": datetime.utcnow(),
+            "event_time": now,
             "raw_data": {},
         }
 
