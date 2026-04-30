@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { WebSocketMessage } from '../types';
+import config from '../config';
 
 interface UseWebSocketOptions {
   url?: string;
@@ -9,7 +10,7 @@ interface UseWebSocketOptions {
 
 export function useWebSocketConnection(options: UseWebSocketOptions = {}) {
   const {
-    url = `ws://${window.location.host}/api/v1/ws`,
+    url = config.wsUrl,
     reconnectInterval = 3000,
     maxReconnectAttempts = 10,
   } = options;

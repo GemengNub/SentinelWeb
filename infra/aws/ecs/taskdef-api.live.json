@@ -1,0 +1,45 @@
+{
+  "family": "sentinel-api",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "1024",
+  "memory": "2048",
+  "executionRoleArn": "arn:aws:iam::953113807556:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::953113807556:role/sentinelTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "sentinel-api",
+      "image": "953113807556.dkr.ecr.ap-southeast-1.amazonaws.com/sentinel-backend:latest",
+      "essential": true,
+      "portMappings": [{ "containerPort": 8000, "protocol": "tcp" }],
+      "environment": [
+        { "name": "APP_NAME", "value": "Sentinel" },
+        { "name": "APP_VERSION", "value": "1.0.0" },
+        { "name": "DEBUG", "value": "false" },
+        { "name": "ENVIRONMENT", "value": "production" }
+      ],
+      "secrets": [
+        { "name": "DATABASE_URL", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:953113807556:secret:sentinel/prod/database-url-4luqpd" },
+        { "name": "REDIS_URL", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:953113807556:secret:sentinel/prod/redis-url-qB0dVr" },
+        { "name": "CELERY_BROKER_URL", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:953113807556:secret:sentinel/prod/celery-broker-url-nz7Fe3" },
+        { "name": "CELERY_RESULT_BACKEND", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:953113807556:secret:sentinel/prod/celery-result-backend-r5a3ie" },
+        { "name": "OPENWEATHER_API_KEY", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:953113807556:secret:sentinel/prod/openweather-api-key-vWlXgr" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/sentinel",
+          "awslogs-region": "ap-southeast-1",
+          "awslogs-stream-prefix": "api"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -f http://localhost:8000/api/v1/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 40
+      }
+    }
+  ]
+}

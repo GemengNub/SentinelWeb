@@ -1,0 +1,8 @@
+{
+  "containerOverrides": [
+    {
+      "name": "sentinel-api",
+      "command": ["alembic", "upgrade", "head"]
+    }
+  ]
+}
