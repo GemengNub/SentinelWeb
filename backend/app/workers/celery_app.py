@@ -69,6 +69,10 @@ celery_app.conf.update(
             "task": "app.workers.tasks.cleanup_old_events",
             "schedule": crontab(hour=0, minute=0),  # Daily at midnight
         },
+        "cleanup-alert-lifecycle": {
+            "task": "app.workers.tasks.cleanup_alert_lifecycle",
+            "schedule": crontab(hour=0, minute=15),  # Daily at 12:15 AM
+        },
         "send-daily-summary": {
             "task": "app.workers.tasks.send_daily_summary",
             "schedule": crontab(hour=8, minute=0),  # Daily at 8 AM

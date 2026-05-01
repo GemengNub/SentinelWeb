@@ -686,6 +686,31 @@ def cleanup_old_events(self):
 
 
 @celery_app.task(bind=True)
+def cleanup_alert_lifecycle(self):
+    """Deactivate stale active alerts and delete old inactive alerts."""
+    logger.info("Running alert lifecycle cleanup...")
+
+    async def _cleanup():
+        from app.services.alert_service import AlertService
+        from app.db.session import async_session_factory
+
+        async with async_session_factory() as session:
+            service = AlertService(session)
+            results = await service.cleanup_alert_lifecycle(
+                auto_deactivate_days=settings.ALERT_AUTO_DEACTIVATE_DAYS,
+                delete_after_days=settings.ALERT_DELETE_AFTER_DAYS,
+            )
+            await session.commit()
+
+            logger.info(
+                f"Alert lifecycle cleanup complete: deactivated={results['deactivated']}, deleted={results['deleted']}"
+            )
+            return results
+
+    return run_async(_cleanup())
+
+
+@celery_app.task(bind=True)
 def send_daily_summary(self):
     """Send daily summary email."""
     logger.info("Sending daily summary...")

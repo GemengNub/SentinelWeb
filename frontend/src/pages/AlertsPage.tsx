@@ -6,9 +6,11 @@ import AlertList from '../components/AlertList';
 import { Alert } from '../types';
 
 const PAGE_SIZE = 5;
+type AlertView = 'active' | 'past';
 
 const AlertsPage: React.FC = () => {
   const { t } = useTranslation();
+  const [alertView, setAlertView] = useState<AlertView>('active');
   const [page, setPage] = useState(1);
   const [allAlerts, setAllAlerts] = useState<Alert[]>([]);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -22,7 +24,13 @@ const AlertsPage: React.FC = () => {
     pageSize: 1000,
     severity: severityFilter !== 'ALL' ? severityFilter : undefined,
     alertType: typeFilter !== 'ALL' ? typeFilter : undefined,
+    isActive: alertView === 'active',
   });
+
+  useEffect(() => {
+    setAllAlerts([]);
+    setIsInitialLoad(true);
+  }, [alertView, severityFilter, typeFilter]);
 
   useEffect(() => {
     if (data?.alerts) {
@@ -73,6 +81,12 @@ const AlertsPage: React.FC = () => {
   };
 
   const hasActiveFilters = searchQuery || severityFilter !== 'ALL' || typeFilter !== 'ALL';
+  const totalLabel = alertView === 'active' ? 'active alerts' : 'past alerts';
+  const emptyStateLabel = alertView === 'active' ? 'No active alerts found' : 'No past alerts found';
+  const emptyStateDescription =
+    alertView === 'active'
+      ? 'There are no active alerts matching your criteria'
+      : 'There are no past alerts matching your criteria';
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -81,8 +95,36 @@ const AlertsPage: React.FC = () => {
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-white">{t('alerts.title')}</h1>
           <p className="text-slate-400 mt-1">
-            {data ? `${data.total} total alerts` : t('common.loading')}
+            {data ? `${data.total} ${totalLabel}` : t('common.loading')}
           </p>
+        </div>
+        <div className="inline-flex rounded-lg border border-slate-700/60 bg-slate-900/60 p-1">
+          <button
+            onClick={() => {
+              setAlertView('active');
+              setPage(1);
+            }}
+            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+              alertView === 'active'
+                ? 'bg-cyan-600 text-white'
+                : 'text-slate-300 hover:text-white hover:bg-slate-800/70'
+            }`}
+          >
+            Active Alerts
+          </button>
+          <button
+            onClick={() => {
+              setAlertView('past');
+              setPage(1);
+            }}
+            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+              alertView === 'past'
+                ? 'bg-cyan-600 text-white'
+                : 'text-slate-300 hover:text-white hover:bg-slate-800/70'
+            }`}
+          >
+            Past Alerts
+          </button>
         </div>
       </div>
 
@@ -191,8 +233,8 @@ const AlertsPage: React.FC = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <p className="text-slate-400 font-medium">No alerts found</p>
-                <p className="text-sm text-slate-500 mt-1">There are no alerts matching your criteria</p>
+                <p className="text-slate-400 font-medium">{emptyStateLabel}</p>
+                <p className="text-sm text-slate-500 mt-1">{emptyStateDescription}</p>
               </div>
             </div>
           ) : (

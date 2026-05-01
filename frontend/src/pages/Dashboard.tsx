@@ -6,7 +6,7 @@ import AlertList from '../components/AlertList';
 import MapView from '../components/MapView';
 
 const Dashboard: React.FC = () => {
-  const { data: alertsData, isLoading: alertsLoading } = useAlerts({ pageSize: 5 });
+  const { data: alertsData, isLoading: alertsLoading } = useAlerts({ pageSize: 5, isActive: true });
   const { data: stats, isLoading: statsLoading } = useAlertStats();
   const { data: activeAlerts } = useActiveAlerts();
   const { setSelectedAlert } = useAppStore();

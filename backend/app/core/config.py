@@ -71,6 +71,10 @@ class Settings(BaseSettings):
     RAINFALL_MEDIUM_THRESHOLD: float = 7.5
     RAINFALL_HIGH_THRESHOLD: float = 15.0
     RAINFALL_CRITICAL_THRESHOLD: float = 50.0
+
+    # Alert lifecycle
+    ALERT_AUTO_DEACTIVATE_DAYS: int = 7
+    ALERT_DELETE_AFTER_DAYS: int = 90
     
     # Polling intervals (seconds)
     EARTHQUAKE_POLL_INTERVAL: int = 60

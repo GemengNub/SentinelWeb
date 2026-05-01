@@ -3,7 +3,7 @@ Alert service for managing disaster alerts.
 """
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
-from sqlalchemy import select, func, and_, or_, desc
+from sqlalchemy import select, func, and_, desc, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from loguru import logger
 
@@ -184,6 +184,44 @@ class AlertService:
             .order_by(desc(Alert.event_time))
         )
         return list(result.scalars().all())
+
+    async def cleanup_alert_lifecycle(
+        self,
+        auto_deactivate_days: int,
+        delete_after_days: int,
+    ) -> Dict[str, int]:
+        """Deactivate stale active alerts and delete old inactive alerts."""
+        now = datetime.utcnow()
+        deactivate_cutoff = now - timedelta(days=auto_deactivate_days)
+        delete_cutoff = now - timedelta(days=delete_after_days)
+
+        deactivated_result = await self.session.execute(
+            update(Alert)
+            .where(
+                and_(
+                    Alert.is_active == True,
+                    Alert.event_time < deactivate_cutoff,
+                )
+            )
+            .values(
+                is_active=False,
+                updated_at=now,
+            )
+        )
+
+        deleted_result = await self.session.execute(
+            delete(Alert).where(
+                and_(
+                    Alert.is_active == False,
+                    Alert.event_time < delete_cutoff,
+                )
+            )
+        )
+
+        return {
+            "deactivated": deactivated_result.rowcount or 0,
+            "deleted": deleted_result.rowcount or 0,
+        }
     
     async def get_alert_stats(self) -> Dict[str, Any]:
         """Get alert statistics."""

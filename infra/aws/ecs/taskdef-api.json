@@ -21,7 +21,9 @@
         { "name": "APP_NAME", "value": "Sentinel" },
         { "name": "APP_VERSION", "value": "1.0.0" },
         { "name": "DEBUG", "value": "false" },
-        { "name": "ENVIRONMENT", "value": "production" }
+        { "name": "ENVIRONMENT", "value": "production" },
+        { "name": "ALERT_AUTO_DEACTIVATE_DAYS", "value": "7" },
+        { "name": "ALERT_DELETE_AFTER_DAYS", "value": "90" }
       ],
       "secrets": [
         { "name": "DATABASE_URL", "valueFrom": "arn:aws:secretsmanager:<REGION>:<ACCOUNT_ID>:secret:sentinel/prod/database-url" },
